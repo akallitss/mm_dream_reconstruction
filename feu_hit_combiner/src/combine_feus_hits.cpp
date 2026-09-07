@@ -69,6 +69,9 @@ int main(int argc, char** argv) {
     Float_t time_over_threshold;
     Float_t integral;
     Bool_t saturated;
+    Bool_t trunc_left;
+    Bool_t trunc_right;
+    Float_t significance;
     Int_t feu;
 
     // --- Branches ---
@@ -87,6 +90,9 @@ int main(int argc, char** argv) {
     outTree.Branch("time_over_threshold", &time_over_threshold, "time_over_threshold/F");
     outTree.Branch("integral", &integral, "integral/F");
     outTree.Branch("saturated", &saturated, "saturated/O");
+    outTree.Branch("trunc_left", &trunc_left, "trunc_left/O");
+    outTree.Branch("trunc_right", &trunc_right, "trunc_right/O");
+    outTree.Branch("significance", &significance, "significance/F");
     outTree.Branch("feu", &feu, "feu/I");
 
     // -------------------------
@@ -123,6 +129,15 @@ int main(int argc, char** argv) {
         inTree->SetBranchAddress("time_over_threshold", &time_over_threshold);
         inTree->SetBranchAddress("integral", &integral);
         inTree->SetBranchAddress("saturated", &saturated);
+        // Older hits files predate the truncation flags — default them to false
+        trunc_left = trunc_right = false;
+        if (inTree->GetBranch("trunc_left"))
+            inTree->SetBranchAddress("trunc_left", &trunc_left);
+        if (inTree->GetBranch("trunc_right"))
+            inTree->SetBranchAddress("trunc_right", &trunc_right);
+        significance = -1.0f;   // marker for pre-significance hits files
+        if (inTree->GetBranch("significance"))
+            inTree->SetBranchAddress("significance", &significance);
 
         feu = input.feu;
 
