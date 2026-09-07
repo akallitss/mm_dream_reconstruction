@@ -1,0 +1,16 @@
+"C:\Program Files\JetBrains\CLion 2024.2.2\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2024.2.2/bin/ninja/win/x64/ninja.exe" -G Ninja -S C:\Users\Dylan\CLionProjects\mm_strip_reconstruction -B C:\Users\Dylan\CLionProjects\mm_strip_reconstruction\cmake-build-debug
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/Users/Dylan/CLionProjects/mm_strip_reconstruction/cmake-build-debug
+C++ compiler GCC used by CMake is not compatible with the configured toolchain Visual Studio. Configure profile…
+C compiler GCC used by CMake is not compatible with the configured toolchain Visual Studio. Configure profile…
+
+Problems were encountered while collecting compiler information:
+	g++.exe: error: unrecognized command-line option '-nologo'
+	g++.exe: error: unrecognized command-line option '-Zc:__cplusplus'
+	g++.exe: error: unrecognized command-line option '-GR'; did you mean '-R'?
+	g++.exe: error: unrecognized command-line option '-EHsc-'
+	g++.exe: error: unrecognized command-line option '-wd4141'
+	g++.exe: error: unrecognized command-line option '-wd4291'
+	g++.exe: error: unrecognized command-line option '-wd4244'
+	g++.exe: error: unrecognized command-line option '-wd4049'
