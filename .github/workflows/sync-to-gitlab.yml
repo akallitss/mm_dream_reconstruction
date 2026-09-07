@@ -1,0 +1,48 @@
+name: Sync to GitLab
+
+# Mirrors this repository's main branch to the CEA GitLab project
+# https://drf-gitlab.cea.fr/p2/mm-dream-reconstruction
+#
+# Requires the repository secret GITLAB_TOKEN: a CEA GitLab personal access
+# token with the write_repository scope. Secrets are per-repository on a
+# personal account, so it must be added here even if other repos already have it.
+#
+# The CEA project must already exist and be empty — a push does not create it.
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check GITLAB_TOKEN is set
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          if [ -z "$GITLAB_TOKEN" ]; then
+            echo "::error::GITLAB_TOKEN is not set in this repository."
+            echo "Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - name: Push to CEA GitLab mirror
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          # oauth2 as the username: GitLab authenticates on the token alone,
+          # so this does not depend on which account the token belongs to.
+          # Only main is pushed, so --prune cannot touch other GitLab branches.
+          git push --force --prune \
+            "https://oauth2:${GITLAB_TOKEN}@drf-gitlab.cea.fr/p2/mm-dream-reconstruction.git" \
+            main:main
