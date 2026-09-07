@@ -14,12 +14,15 @@
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TH1D.h"
 #include "RtypesCore.h"
 
 #include <arpa/inet.h>
 #include "dreamdataline.h"
 
 #include <stdexcept>
+#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -86,6 +89,31 @@ int DreamDecoder::run() {
     UShort_t  dreamID = 0;
     UShort_t  ampl = 0;
 
+    // Header values of the event whose data is currently accumulated, so a
+    // flush triggered by a NEW header still stamps the OLD event's header.
+    ULong64_t accEventID = 0;
+    ULong64_t accTimestamp = 0;
+    UShort_t  accFineTs = 0;
+
+    // ---- data-loss accounting ------------------------------------------
+    // A DREAM FEU under RAW bandwidth pressure silently drops sample-group
+    // packets (run_71 lost ~24%).  Nothing downstream can tell that from
+    // genuinely quiet channels, so the decoder counts it and both SHOUTS and
+    // writes the numbers into the output file, where they cannot be separated
+    // from the data.
+    ULong64_t nFlushEoE = 0;       // events closed by the FEU end-of-event marker
+    ULong64_t nFlushEvtId = 0;     // events closed only because eventID changed
+                                   //   -> their EoE packet was lost
+    ULong64_t nFlushEof = 0;       // last event, closed at end of file
+    ULong64_t nFramesTotal = 0;    // FEU header frames seen
+    ULong64_t sumDistinct = 0;     // sum over events of distinct sampleIDs
+    ULong64_t firstEventID = 0, lastEventID = 0;
+    bool haveFirstEvent = false;
+    UShort_t  maxSampleID = 0;
+    bool sawZS = false, sawRaw = false;
+    std::vector<uint8_t>   sampSeen(1024, 0);
+    std::vector<ULong64_t> sampHist(1024, 0);
+
     bool isEvent = false;  // check the end of the event
     bool isFT    = false;  // on if FT (Final Trailer) is reached and set off by the header
     bool isZS    = true;   // true if zero suppressed data. false if not
@@ -108,6 +136,30 @@ int DreamDecoder::run() {
     nt.Branch("sample",          &sample);
     nt.Branch("channel",         &channel);
     nt.Branch("amplitude",       &amplitude);
+
+    // Close out the accumulated event: stamp the right header, fill, reset,
+    // and fold this event's sample coverage into the loss statistics.
+    //   reason 0 = FEU end-of-event marker (normal)
+    //   reason 1 = eventID changed (the EoE packet was lost)
+    //   reason 2 = end of file
+    auto flushEvent = [&](int reason) {
+        ULong64_t distinct = 0;
+        for (int sIdx = 0; sIdx <= (int)maxSampleID; ++sIdx) {
+            if (sampSeen[sIdx]) { sampHist[sIdx]++; distinct++; }
+        }
+        std::fill(sampSeen.begin(), sampSeen.end(), 0);
+        sumDistinct += distinct;
+        if (!haveFirstEvent) { firstEventID = accEventID; haveFirstEvent = true; }
+        lastEventID = accEventID;
+        if      (reason == 0) nFlushEoE++;
+        else if (reason == 1) nFlushEvtId++;
+        else                  nFlushEof++;
+        nt.Fill();
+        channel.clear();
+        sample.clear();
+        amplitude.clear();
+        i++;
+    };
 
     // Prime first word (original code had data initialized to 0 and logic relied on read16 at various points)
     // To mimic behavior exactly, read first word here:
@@ -183,6 +235,42 @@ int DreamDecoder::run() {
                         << setw(20) << timestamp
                         << setw(5) << fine_timestamp
                         << " === " << iFeuH<<endl;
+            }
+
+            // ---- flush on eventID change -------------------------------
+            // The FEU end-of-event marker is not reliable on RAW (non-ZS)
+            // runs: when the packet carrying it is dropped, the next event
+            // accumulates into the same entry and two events merge.  run_71
+            // lost ~24% of its sample-groups to FEU bandwidth and ~33% of its
+            // decoded entries were merged pairs.
+            //
+            // Every FEU header carries the eventID, so a change of eventID is
+            // an unambiguous boundary.  Verified on run_71 group 023 at the
+            // word level (analysis/fdf_scan.py): eventID present on every
+            // surviving frame, stepping by exactly +1 with no gaps, and
+            // sampleID strictly increasing within an event, never repeated.
+            //
+            // This is additive: on ZS runs the EoE fires normally and clears
+            // the buffers, so this branch sees an empty buffer and does
+            // nothing.  Behaviour on existing ZS data is unchanged.
+            if ( !channel.empty() && eventID != accEventID ) {
+                ULong64_t nEvt = eventID, nTs = timestamp;
+                UShort_t  nFts = fine_timestamp;
+                eventID = accEventID; timestamp = accTimestamp;
+                fine_timestamp = accFineTs;
+                flushEvent(1);
+                eventID = nEvt; timestamp = nTs; fine_timestamp = nFts;
+            }
+            accEventID   = eventID;
+            accTimestamp = timestamp;
+            accFineTs    = fine_timestamp;
+
+            // sample coverage of the event now being accumulated
+            if (isZS) sawZS = true; else sawRaw = true;
+            nFramesTotal++;
+            if (sampleID < 1024) {
+                sampSeen[sampleID] = 1;
+                if (sampleID > maxSampleID) maxSampleID = sampleID;
             }
 
         }
@@ -327,20 +415,13 @@ int DreamDecoder::run() {
             // check if this is the end of the event (EoE)
             if (get_EoE(data) == 1) {
 
-                auto a = nt.Fill();  // fill the tree
-
-                // reset all
-                isEvent = false;
-
-                channel.clear();
-                sample.clear();
-                amplitude.clear();
-
                 if (i == 0) {
                     cout << " reading FEU " << FeuID << endl;
                 }
+                flushEvent(0);   // normal close, on the FEU end-of-event marker
 
-                i++;  // count events;
+                // reset all
+                isEvent = false;
             }
 
             if (debug) {
@@ -359,10 +440,106 @@ int DreamDecoder::run() {
         }
     }
 
+    // Final flush: the last event of a RAW file often has no end-of-event
+    // marker (its packet was among the dropped ones), so without this its
+    // data would be silently discarded.
+    if ( !channel.empty() ) {
+        eventID = accEventID; timestamp = accTimestamp;
+        fine_timestamp = accFineTs;
+        flushEvent(2);
+    }
+
+    // ================= data-loss report =================================
+    const ULong64_t nEvents      = (ULong64_t)i;
+    const int       nSampExpect  = (int)maxSampleID + 1;
+    const ULong64_t evtSpan      = (haveFirstEvent && lastEventID >= firstEventID)
+                                 ? (lastEventID - firstEventID + 1) : nEvents;
+    const ULong64_t missingEvts  = (evtSpan > nEvents) ? (evtSpan - nEvents) : 0;
+    const bool      rawMode      = sawRaw && !sawZS;
+    const double    acceptance   = (nEvents && nSampExpect)
+        ? (double)sumDistinct / ((double)nEvents * (double)nSampExpect) : 1.0;
+    const double    lossFrac     = 1.0 - acceptance;
+
+    cout << "\n ---------------- decode summary ----------------\n"
+         << "   mode                 : " << (rawMode ? "RAW (not zero-suppressed)"
+                                          : (sawZS && sawRaw ? "MIXED ZS/RAW (!)" : "zero-suppressed"))
+         << "\n   events written       : " << nEvents
+         << "\n   eventID range        : " << firstEventID << " .. " << lastEventID
+         << "  (span " << evtSpan << ")"
+         << "\n   events MISSING       : " << missingEvts
+         << "\n   closed by EoE marker : " << nFlushEoE
+         << "\n   closed by eventID    : " << nFlushEvtId
+         << (nFlushEvtId ? "   <-- their end-of-event packet was LOST" : "")
+         << "\n   closed at EOF        : " << nFlushEof << endl;
+    if (rawMode) {
+        cout << "   samples per event    : " << nSampExpect << " expected\n"
+             << "   sample completeness  : " << fixed << setprecision(1)
+             << 100.0 * acceptance << " %" << endl;
+    }
+
+    const bool lossy = missingEvts > 0 || (rawMode && lossFrac > 0.001);
+    if (lossy) {
+        ostringstream banner;
+        banner << "\n"
+               << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+               << " !!  DATA LOSS in " << input_filename_ << "\n";
+        if (rawMode && lossFrac > 0.001)
+            banner << " !!  " << fixed << setprecision(1) << 100.0 * lossFrac
+                   << " % of sample-groups never arrived (FEU bandwidth).\n"
+                   << " !!  Mean waveforms MUST be divided by the per-sample\n"
+                   << " !!  acceptance, saved here as TH1D 'sample_acceptance'.\n";
+        if (missingEvts > 0)
+            banner << " !!  " << missingEvts << " whole events missing from the eventID sequence.\n";
+        if (nFlushEvtId)
+            banner << " !!  " << nFlushEvtId << " events lost their end-of-event packet\n"
+                   << " !!  (closed on eventID change instead -- data is intact).\n";
+        banner << " !!  Numbers are also stored in the TTree 'decode_stats'.\n"
+               << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+        cout << banner.str() << flush;
+        cerr << banner.str() << flush;   // so it survives a piped stdout
+    } else {
+        cout << "   >> no data loss detected" << endl;
+    }
+    cout << " ------------------------------------------------\n" << endl;
+
+    // per-sample acceptance, written next to the data so the correction can
+    // never be separated from the file it applies to
+    TH1D hAcc("sample_acceptance",
+              "fraction of events containing each sample index;sample;acceptance",
+              nSampExpect, -0.5, nSampExpect - 0.5);
+    hAcc.SetDirectory(&fout);
+    for (int sIdx = 0; sIdx < nSampExpect; ++sIdx) {
+        hAcc.SetBinContent(sIdx + 1, nEvents ? (double)sampHist[sIdx] / (double)nEvents : 0.0);
+    }
+
+    TTree stats("decode_stats", "decode_stats");
+    stats.SetDirectory(&fout);
+    ULong64_t s_events = nEvents, s_missing = missingEvts, s_eoe = nFlushEoE,
+              s_evtid = nFlushEvtId, s_eof = nFlushEof, s_frames = nFramesTotal,
+              s_first = firstEventID, s_last = lastEventID;
+    Int_t     s_nsamp = nSampExpect, s_raw = rawMode ? 1 : 0;
+    Double_t  s_acc = acceptance;
+    stats.Branch("events",          &s_events,  "events/l");
+    stats.Branch("events_missing",  &s_missing, "events_missing/l");
+    stats.Branch("closed_eoe",      &s_eoe,     "closed_eoe/l");
+    stats.Branch("closed_eventid",  &s_evtid,   "closed_eventid/l");
+    stats.Branch("closed_eof",      &s_eof,     "closed_eof/l");
+    stats.Branch("feu_frames",      &s_frames,  "feu_frames/l");
+    stats.Branch("first_eventid",   &s_first,   "first_eventid/l");
+    stats.Branch("last_eventid",    &s_last,    "last_eventid/l");
+    stats.Branch("samples_expected",&s_nsamp,   "samples_expected/I");
+    stats.Branch("raw_mode",        &s_raw,     "raw_mode/I");
+    stats.Branch("sample_acceptance_mean", &s_acc, "sample_acceptance_mean/D");
+    stats.Fill();
+
     cout << " Events analysed : " << i << endl;
 
     is.close();
     fout.Write();
+    // hAcc and stats are stack objects registered with fout; detach them
+    // before Close() so the file does not try to delete them.
+    hAcc.SetDirectory(nullptr);
+    stats.SetDirectory(nullptr);
     //fout.SetName( Form("FeuID%d.root", FeuID) );
     fout.Close();
     return 0;

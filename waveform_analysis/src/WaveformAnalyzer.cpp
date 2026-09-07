@@ -4,6 +4,7 @@
 
 #include "WaveformAnalyzer.h"
 #include <iostream>
+#include <cstdlib>
 #include <cmath>
 #include <limits>
 #include <algorithm>
@@ -114,6 +115,20 @@ WaveformAnalyzer::WaveformAnalyzer(const std::string& inputFileName,
           pedestalFileName(pedestalFileName)
 {
     hasPedestal = !pedestalFileName.empty();
+    // TEST override: flat pedestal sigma from environment (WFA_FLAT_SIGMA).
+    if (const char* fs = std::getenv("WFA_FLAT_SIGMA")) {
+        flatSigma = std::atof(fs);
+        std::cout << "[WFA_FLAT_SIGMA] Overriding all pedestal RMS with flat sigma = "
+                  << flatSigma << " ADC (means kept).\n";
+    }
+    // TEST override: hit threshold in sigma from environment (WFA_THRESHOLD_SIGMA).
+    // Combined with WFA_FLAT_SIGMA this gives a uniform threshold = thresholdSigma*flatSigma,
+    // e.g. 3 sigma of the median pedestal RMS. Default behaviour unchanged when unset.
+    if (const char* ts = std::getenv("WFA_THRESHOLD_SIGMA")) {
+        thresholdSigma = std::atof(ts);
+        std::cout << "[WFA_THRESHOLD_SIGMA] Overriding hit threshold sigma = "
+                  << thresholdSigma << ".\n";
+    }
 }
 
 void WaveformAnalyzer::computePedestals() {
@@ -221,6 +236,17 @@ void WaveformAnalyzer::computePedestals() {
             pedestalMap[ch] = {mean, rms, rmsGate};
         }
         f.Close();
+    }
+
+    // TEST override: replace every channel's RMS with the flat sigma (means untouched).
+    if (flatSigma > 0.0f) {
+        // Both noise fields: the pulse-finding rewrite (8ec6769) split the gate
+        // sigma out of rms, and the matched-filter gate is now the default, so
+        // overriding rms alone would leave the gate -- the thing that suppresses
+        // spark-contaminated strips -- on the original per-channel noise.
+        for (auto& kv : pedestalMap) { kv.second.rms = flatSigma; kv.second.rmsGate = flatSigma; }
+        std::cout << "[WFA_FLAT_SIGMA] Applied flat sigma " << flatSigma
+                  << " to " << pedestalMap.size() << " channels.\n";
     }
 
     // Write pedestal tree to output

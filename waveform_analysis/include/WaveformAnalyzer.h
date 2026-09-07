@@ -87,6 +87,11 @@ private:
     bool allowMultiplePeaks = true;  // if false, only the LARGEST peak per channel per event is kept
     bool local_baseline = true;  // if true, use local baseline per peak; if false, use global pedestal mean
     float thresholdSigma = 5.0;  // Number of pedestal RMS above which a hit is registered
+    // TEST/DEBUG override: if >0 (set via env WFA_FLAT_SIGMA), every channel's pedestal RMS
+    // is replaced by this flat value AFTER the per-channel mean is computed. Keeps correct
+    // baseline subtraction but makes the 5σ threshold uniform/low, recovering strips that a
+    // spark-contaminated pedestal would otherwise suppress. -1 = disabled (normal behaviour).
+    float flatSigma = -1.0f;
 
     int minSamplesForPeak = 3;  // minimum number of samples above threshold to consider a peak
     int minWidthSamples = 2;  // minimum width in samples above threshold to consider a pulse

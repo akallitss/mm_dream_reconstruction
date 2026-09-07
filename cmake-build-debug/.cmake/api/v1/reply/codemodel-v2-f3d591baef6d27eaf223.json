@@ -1,0 +1,144 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "common",
+					"jsonFile" : "directory-common-Debug-df8a23303754f0cfc2e1.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "common",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "decoder",
+					"jsonFile" : "directory-decoder-Debug-e337e07c2ea25b3a00df.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "decoder",
+					"targetIndexes" : 
+					[
+						2,
+						3
+					]
+				},
+				{
+					"build" : "waveform_analysis",
+					"jsonFile" : "directory-waveform_analysis-Debug-74853a8d33e7b280fd4d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "waveform_analysis",
+					"targetIndexes" : 
+					[
+						0,
+						4
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					],
+					"name" : "mm_strip_reconstruction",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 3,
+					"id" : "analyze_waveforms::@c8442701418a929566be",
+					"jsonFile" : "target-analyze_waveforms-Debug-159c3c980296968d2839.json",
+					"name" : "analyze_waveforms",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "common::@bfc844598bd03e848b3c",
+					"jsonFile" : "target-common-Debug-ad4ec3ab1f4305a1f829.json",
+					"name" : "common",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "decode::@5310dfab9e417c587352",
+					"jsonFile" : "target-decode-Debug-c32e6c1b8d7f7124b8d1.json",
+					"name" : "decode",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "decoder::@5310dfab9e417c587352",
+					"jsonFile" : "target-decoder-Debug-801bfb3d2978ba7cd990.json",
+					"name" : "decoder",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "waveform_analysis::@c8442701418a929566be",
+					"jsonFile" : "target-waveform_analysis-Debug-ad7db188d33a3d510db3.json",
+					"name" : "waveform_analysis",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/Dylan/CLionProjects/mm_strip_reconstruction/cmake-build-debug",
+		"source" : "C:/Users/Dylan/CLionProjects/mm_strip_reconstruction"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

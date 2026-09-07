@@ -1,0 +1,212 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5
+					],
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "common",
+					"jsonFile" : "directory-common-Debug-df8a23303754f0cfc2e1.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "common",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "decoder",
+					"jsonFile" : "directory-decoder-Debug-e337e07c2ea25b3a00df.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "decoder",
+					"targetIndexes" : 
+					[
+						5,
+						6
+					]
+				},
+				{
+					"build" : "waveform_analysis",
+					"jsonFile" : "directory-waveform_analysis-Debug-74853a8d33e7b280fd4d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "waveform_analysis",
+					"targetIndexes" : 
+					[
+						0,
+						8
+					]
+				},
+				{
+					"build" : "feu_hit_combiner",
+					"jsonFile" : "directory-feu_hit_combiner-Debug-558b76736ed2e4134434.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "feu_hit_combiner",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "clusterizer",
+					"jsonFile" : "directory-clusterizer-Debug-aa5652d761a85f10b23b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "clusterizer",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						7
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					],
+					"name" : "mm_dream_reconstruction",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 3,
+					"id" : "analyze_waveforms::@c8442701418a929566be",
+					"jsonFile" : "target-analyze_waveforms-Debug-8eb93954c4c3d7b00650.json",
+					"name" : "analyze_waveforms",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "clusterize1d::@2fb5f27a46532822e489",
+					"jsonFile" : "target-clusterize1d-Debug-2ab796f00074f53f7a73.json",
+					"name" : "clusterize1d",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "clusterizer::@2fb5f27a46532822e489",
+					"jsonFile" : "target-clusterizer-Debug-1c5076da417e1772106a.json",
+					"name" : "clusterizer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "combine_feus_hits::@6a2209298e8c6ca7b4f4",
+					"jsonFile" : "target-combine_feus_hits-Debug-eb8439f72d5c577da03d.json",
+					"name" : "combine_feus_hits",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "common::@bfc844598bd03e848b3c",
+					"jsonFile" : "target-common-Debug-05d077b0047f3f16d27b.json",
+					"name" : "common",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "decode::@5310dfab9e417c587352",
+					"jsonFile" : "target-decode-Debug-d6747e81d1381366c5b0.json",
+					"name" : "decode",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "decoder::@5310dfab9e417c587352",
+					"jsonFile" : "target-decoder-Debug-5305795802bb06fcb8b8.json",
+					"name" : "decoder",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "strip_mapping::@2fb5f27a46532822e489",
+					"jsonFile" : "target-strip_mapping-Debug-6575e44b1f3d25309818.json",
+					"name" : "strip_mapping",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "waveform_analysis::@c8442701418a929566be",
+					"jsonFile" : "target-waveform_analysis-Debug-98abb4079cd11c2c66ad.json",
+					"name" : "waveform_analysis",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/Dylan/CLionProjects/mm_strip_reconstruction/cmake-build-debug-visual-studio",
+		"source" : "C:/Users/Dylan/CLionProjects/mm_strip_reconstruction"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
